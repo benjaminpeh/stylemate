@@ -57,32 +57,42 @@ export default function GeneratePage() {
     return `${colour} ${name}`;
   }
 
-  function generateOutfit() {
-    if (items.length === 0) {
-      setResult("Add at least one wardrobe item first so StyleMate can generate an outfit.");
-      return;
-    }
-
-    setIsLoading(true);
-    setResult("");
-
-    setTimeout(() => {
-      const tops = items.filter((item) =>
-        ["Shirt", "T-shirt", "Outerwear", "Long Sleeve"].includes(item.category)
-      );
-
-      const selectedTop = tops[0] || items[0];
-      const outfitItemName = buildItemName(selectedTop);
-      const occasionText = occasion.trim() || "a casual day out";
-
-      setResult(
-        `For ${occasionText}, StyleMate recommends wearing your ${outfitItemName}. Since your profile is ${profile.style} with a ${profile.undertone} undertone, keep the look clean, balanced, and easy to wear. Since it is estimated 26 C in Singapore, choose breathable bottoms and simple shoes. This gives you a comfortable outfit that still fits your personal style.`
-      );
-
-      setIsLoading(false);
-    }, 1000);
+  async function generateOutfit() {
+  if (items.length === 0) {
+    setResult("Add at least one wardrobe item first so Agnes AI can generate an outfit.");
+    return;
   }
 
+  setIsLoading(true);
+  setResult("");
+
+  try {
+    const response = await fetch("/api/recommend", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        occasion: occasion || "a casual day out",
+        profile,
+        wardrobe: items,
+        weather: {
+          temperature: "26 C",
+          location: "Singapore",
+          condition: "light outfit recommended",
+        },
+      }),
+    });
+
+    const data = await response.json();
+
+    setResult(data.recommendation || "Agnes AI could not generate a recommendation.");
+  } catch (error) {
+    setResult("Agnes AI failed to generate a recommendation. Please try again.");
+  } finally {
+    setIsLoading(false);
+  }
+}
   return (
     <main className="min-h-screen bg-[#eadcff] text-[#4b3a5d]">
       <div className="mx-auto min-h-screen max-w-md px-6 pb-32 pt-8">

@@ -2,7 +2,8 @@
 import { NextResponse } from "next/server";
 
 const client = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
+  baseURL: "https://apihub.agnes-ai.com/v1",
+  apiKey: process.env.AGNES_API_KEY,
 });
 
 export async function POST(req: Request) {
@@ -10,7 +11,7 @@ export async function POST(req: Request) {
     const body = await req.json();
 
     const completion = await client.chat.completions.create({
-      model: "gpt-4.1-mini",
+      model: "agnes-2.0-flash",
       messages: [
         {
           role: "system",
@@ -28,9 +29,16 @@ export async function POST(req: Request) {
       recommendation: completion.choices[0]?.message?.content ?? "No recommendation generated.",
     });
   } catch (error) {
-    return NextResponse.json(
-      { error: "Agnes AI failed to generate a recommendation." },
-      { status: 500 }
-    );
-  }
+  console.error(error);
+
+  return NextResponse.json(
+    {
+      error:
+        error instanceof Error
+          ? error.message
+          : "Unknown Agnes AI error",
+    },
+    { status: 500 }
+  );
+}
 }
